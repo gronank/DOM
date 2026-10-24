@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.23)
+project(DynamicObjectModel)
+add_subdirectory(DOM)
+add_subdirectory(SampleLibrary)
+add_subdirectory(SampleConsole)
+add_subdirectory(Serialization)
