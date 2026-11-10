@@ -5,7 +5,7 @@
 
 extern "C"
 {
-	DOM_EXPORT ce_module* load_module(const char* path);
+	//DOM_EXPORT ce_module* load_module(const char* path);
 	DOM_EXPORT type* module_get_type(ce_module*, const char*);
 	DOM_EXPORT instance type_create(type*);
 	DOM_EXPORT void instance_inc_ref(instance*);

@@ -5,7 +5,10 @@
 #include <memory>
 #include <span>
 #include <fstream>
+#include <runtime.h>
 
+auto string_t = get_type("String");
+auto integer_t = get_type("Integer");
 struct InstanceWrapper
 {
 	instance value;
@@ -72,9 +75,9 @@ namespace {
 			}
 			return listResult;
 		}
-		if (ins->type == &string_t)
+		if (ins->type == string_t)
 			return reinterpret_cast<const char*>(&ins->object);
-		else if (ins->type == &integer_t)
+		else if (ins->type == integer_t)
 			return *reinterpret_cast<int*>(&ins->object);
 		else
 			return json::object({ {"id", (long long)*reinterpret_cast<void**>(&ins->object)} });
@@ -198,7 +201,7 @@ configuration* configuration_deserialize(const char* path)
 		std::string moduleName = object["module"];
 		auto& module = loadedModules[moduleName];
 		if (!module)
-			module = load_module(moduleName.c_str());
+			module = get_module(moduleName.c_str());
 		loadedInstances[object["id"]] = createInstance(module, object);
 	}
 

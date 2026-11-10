@@ -3,38 +3,9 @@
 #include <windows.h> 
 #include <span>
 #include <algorithm>
-
-type* type_of_object(type* base_type, object_id* ptr)
-{
-	return base_type->type_of ? base_type->type_of(*ptr) : base_type;
-}
+#include <runtime.h>
 
 
-
-std::map<ce_module*, HINSTANCE> loadedModules;
-
-ce_module* load_module(const char* path)
-{
-	HINSTANCE libPtr = LoadLibraryA(path);
-	auto getModuleFunc = (load_module_func)GetProcAddress(libPtr, "load_module");
-	ce_module* m = getModuleFunc?getModuleFunc():nullptr;
-	if (!m)
-	{
-		FreeLibrary(libPtr);
-		return nullptr;
-	}
-
-	loadedModules[m] = libPtr;
-	return m;
-}
-DOM_EXPORT type* module_get_type(ce_module* mod, const char* name)
-{
-	auto types = std::span{ mod->types.begin, (size_t)mod->types.size };
-	auto it = std::ranges::find_if(types, [&](const type& t) {return !strcmp(t.name, name);});
-	if (it == types.end())
-		return nullptr;
-	return &*it;
-}
 instance type_create(type* typ)
 {
 	if (!typ->constructor)
@@ -127,22 +98,17 @@ void instance_list_add(instance* ins, instance* value)
 	list->add(ins->object, value->object);
 }
 
+auto string_t = get_type("String");
+auto integer_t = get_type("Integer");
+
 DOM_EXPORT instance instance_string(const char* str)
 {
-	return { .object = reinterpret_cast<object_id>((char*)str), .type = &string_t};
+	return { .object = reinterpret_cast<object_id>((char*)str), .type = string_t };
 }
 
 DOM_EXPORT instance instance_integer(int i)
 {
-	return { .object = *reinterpret_cast<object_id*>(&i), .type = &integer_t };
+	return { .object = *reinterpret_cast<object_id*>(&i), .type = integer_t };
 }
 
-type string_t
-{
-	.name = "String"
-};
 
-type integer_t
-{
-	.name = "Integer"
-};

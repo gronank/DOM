@@ -11,14 +11,13 @@ extern "C"
 	typedef object_id (*get_property)(object_id);
 	typedef void (*inc_ref)(object_id);
 	typedef void (*dec_ref)(object_id);
-	typedef type* (*type_of)(object_id);
+	typedef const char* (*type_of)(object_id);
 	typedef object_id (*constructor)();
 	typedef int (*list_size)(object_id);
 	typedef object_id (*list_at)(object_id, int);
 	typedef void (*list_remove)(object_id, int);
 	typedef void (*list_insert)(object_id, int, object_id);
 	typedef void (*list_add)(object_id, object_id);
-	typedef ce_module* (*load_module_func)();
 
 	typedef struct property
 	{
@@ -123,10 +122,5 @@ extern "C"
 		type* type;
 	} instance;
 
-	extern type string_t;
-
-	extern type integer_t;
-
-	//module* load_module(const char*);
 }
 #endif DOM_INTERFACE_DEFINE

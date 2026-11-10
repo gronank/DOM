@@ -5,6 +5,9 @@
 #include <memory>
 #include <serialization.h>
 #include <iomanip>
+#include <runtime.h>
+auto string_t = get_type("String");
+auto integer_t = get_type("Integer");
 void export_objects(ce_module* m)
 {
 	auto view_t = module_get_type(m, "View");
@@ -61,9 +64,9 @@ void export_objects(ce_module* m)
 auto indent = std::string_view("                                          ");
 void printInstance(instance* ins, int indentation)
 {
-	if (ins->type == &string_t)
+	if (ins->type == string_t)
 		std::cout << *reinterpret_cast<const char*>(ins->object) << "\n";
-	else if(ins->type == &integer_t)
+	else if(ins->type == integer_t)
 		std::cout << *reinterpret_cast<int*>(&ins->object) << "\n";
 	else if (ins->type->list_info)
 	{
@@ -129,22 +132,17 @@ void printTypes(ce_module* mod)
 
 		for (const auto& property : properties)
 		{
-
-			auto propertyTypeName =
-				property.type == &string_t ? "String" :
-				property.type == &integer_t ? "Integer" :
-				property.type->name;
 			std::string access = "[get";
 			if (property.set)
 				access += ", set";
 			access += "]";
-			std::cout << "    " << property.name << " {" << propertyTypeName << "} " << access << "\n";
+			std::cout << "    " << property.name << " {" << property.type->name << "} " << access << "\n";
 		}
 	}
 }
 int main()
 {
-	auto mod = load_module("SampleLibrary");
+	auto mod = get_module("SampleLibrary");
 	if (!mod)
 	{
 		std::cout << "Failed to load module: SampleLibrary\n";

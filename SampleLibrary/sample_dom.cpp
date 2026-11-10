@@ -6,12 +6,14 @@
 #include <typeindex>
 
 
-type* type_of_style(style* style);
+const char* type_of_style(style* style);
 
 ce_module m
 {
     .name = "SampleLibrary",
 };
+auto string_t = get_type("String");
+auto integer_t = get_type("String");
 
 type style_t
 {
@@ -27,7 +29,7 @@ type style_t
 property pathProperty
 {
     .name = "Path",
-    .type = &string_t,
+    .type = string_t,
     .get = (get_property)&symbol_style_get_path,
     .set = (set_property)&symbol_style_set_path,
 };
@@ -49,7 +51,7 @@ type symbol_style_t
 property widthProperty
 {
     .name = "Width",
-    .type = &integer_t,
+    .type = integer_t,
     .get = (get_property)&line_style_get_width,
     .set = (set_property)&line_style_set_width,
 };
@@ -159,16 +161,12 @@ ce_module* load_module()
     return &m;
 }
 
-type* view_type()
-{
-    return &view_t;
-}
 
-std::map<std::type_index, type*> typeMap{ 
-    {typeid(SymbolStyle),&symbol_style_t},
-    {typeid(LineStyle), &line_style_t}};
+std::map<std::type_index, const char*> typeMap{ 
+    {typeid(SymbolStyle),"SymbolStyle"},
+    {typeid(LineStyle), "LineStyle"}};
 
-type* type_of_style(style* s_p)
+const char* type_of_style(style* s_p)
 {
     RefView<Style> l = (ControlBlock*)s_p;
     auto* type = l.heldType();

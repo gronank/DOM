@@ -17,7 +17,7 @@ target_sources(Serialization PUBLIC
 		nlohmann/json.hpp
 )
 
-target_link_libraries(Serialization PUBLIC DOM)
+target_link_libraries(Serialization PUBLIC DOM Runtime)
 
 
 
