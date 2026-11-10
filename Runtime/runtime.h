@@ -6,11 +6,11 @@ extern "C"
 {
 	typedef struct runtime runtime;
 	typedef struct ce_module ce_module;
-	bool initialize_module(const char*);
-	ce_module* get_module(const char*);
-	type* get_type(const char*);
-	type* type_of_object(type*, object_id*);
+	RUNTIME_EXPORT bool initialize_module(const char*);
+	RUNTIME_EXPORT ce_module* get_module(const char*);
+	RUNTIME_EXPORT type* get_type(const char*);
+	RUNTIME_EXPORT type* type_of_object(type*, object_id*);
 		
-	typedef ce_module* (*load_module_func)(runtime*);
+	typedef ce_module* (*load_module_func)();
 }
 #endif // !RUNTIME_DEFINED

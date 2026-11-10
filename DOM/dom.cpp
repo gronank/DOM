@@ -21,7 +21,7 @@ void instance_inc_ref(instance* ins)
 
 void instance_dec_ref(instance* ins)
 {
-	if(ins->type->dec_ref)
+	if(ins->type && ins->type->dec_ref)
 		ins->type->dec_ref(ins->object);
 }
 instance resolve_instance(object_id id, type* base_type)
@@ -108,7 +108,7 @@ DOM_EXPORT instance instance_string(const char* str)
 
 DOM_EXPORT instance instance_integer(int i)
 {
-	return { .object = *reinterpret_cast<object_id*>(&i), .type = integer_t };
+	return { .object = reinterpret_cast<object_id>(i), .type = integer_t };
 }
 
 

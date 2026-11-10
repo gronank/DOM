@@ -42,8 +42,7 @@ bool initialize_module(const char* path)
 		return true;
 
 	HINSTANCE libPtr = LoadLibraryA(path);
-	auto getModuleFunc = (load_module_func)GetProcAddress(libPtr, "load_module");
-	ce_module* m = getModuleFunc ? getModuleFunc(&default_runtime) : nullptr;
+	auto getModuleFunc = (load_module_func)GetProcAddress(libPtr, "load_module");	ce_module* m = getModuleFunc ? getModuleFunc() : nullptr;
 	if (!m)
 	{
 		FreeLibrary(libPtr);
@@ -51,13 +50,14 @@ bool initialize_module(const char* path)
 	}
 	else
 	{
-		default_runtime.loadedModules[path] = { libPtr, m };
-		
 		for (type& t : std::span{ m->types.begin, (size_t)m->types.size })
 		{
 			assert(!default_runtime.loadedTypes.contains(t.name));
 			default_runtime.loadedTypes[t.name] = &t;
 		}
+		auto& module = default_runtime.loadedModules[path];
+		module.libPtr = libPtr;
+		module.module = m;
 		return true;
 	}
 }

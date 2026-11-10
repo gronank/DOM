@@ -5,6 +5,6 @@
 
 extern "C"
 {
-	SAMPLELIBRARY_EXPORT ce_module* load_module(runtime*);
+	SAMPLELIBRARY_EXPORT ce_module* load_module();
 }
 #endif

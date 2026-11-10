@@ -12,8 +12,9 @@ ce_module m
 {
     .name = "SampleLibrary",
 };
+
 auto string_t = get_type("String");
-auto integer_t = get_type("String");
+auto integer_t = get_type("Integer");
 
 type style_t
 {

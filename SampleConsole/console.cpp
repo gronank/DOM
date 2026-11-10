@@ -8,12 +8,12 @@
 #include <runtime.h>
 auto string_t = get_type("String");
 auto integer_t = get_type("Integer");
-void export_objects(ce_module* m)
+void export_objects()
 {
-	auto view_t = module_get_type(m, "View");
+	auto view_t = get_type("View");
 	auto v = type_create(view_t);
 
-	auto layer_t = module_get_type(m, "Layer");
+	auto layer_t = get_type("Layer");
 	auto layersProperty = instance_get_property_by_name(&v, "Layers");
 	auto layerList = instance_get_property_value(&v, layersProperty);
 
@@ -25,7 +25,7 @@ void export_objects(ce_module* m)
 		auto stylesList = instance_get_property_value(&l, stylesProperty);
 
 		{
-			auto symbol_style_t = module_get_type(m, "SymbolStyle");
+			auto symbol_style_t = get_type("SymbolStyle");
 			auto symbolStyle = type_create(symbol_style_t);
 			auto pathProperty = instance_get_property_by_name(&symbolStyle, "Path");
 			auto path = instance_string("MyImage.png");
@@ -44,7 +44,7 @@ void export_objects(ce_module* m)
 		auto stylesList = instance_get_property_value(&l, stylesProperty);
 
 		{
-			auto symbol_style_t = module_get_type(m, "LineStyle");
+			auto symbol_style_t = get_type("LineStyle");
 			auto lineStyle = type_create(symbol_style_t);
 			auto widthProperty = instance_get_property_by_name(&lineStyle, "Width");
 			auto width = instance_integer(15);
@@ -65,7 +65,7 @@ auto indent = std::string_view("                                          ");
 void printInstance(instance* ins, int indentation)
 {
 	if (ins->type == string_t)
-		std::cout << *reinterpret_cast<const char*>(ins->object) << "\n";
+		std::cout << reinterpret_cast<const char*>(ins->object) << "\n";
 	else if(ins->type == integer_t)
 		std::cout << *reinterpret_cast<int*>(&ins->object) << "\n";
 	else if (ins->type->list_info)
@@ -150,7 +150,7 @@ int main()
 	}
 	printTypes(mod);
 	std::cout << "\nExporting constructed config...\n";
-	export_objects(mod);
+	export_objects();
 	std::cout << "\n";
 	std::cout << "Loaded config:\n";
 	import_objects("myConfig.pj");

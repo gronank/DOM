@@ -76,9 +76,9 @@ namespace {
 			return listResult;
 		}
 		if (ins->type == string_t)
-			return reinterpret_cast<const char*>(&ins->object);
+			return reinterpret_cast<const char*>(ins->object);
 		else if (ins->type == integer_t)
-			return *reinterpret_cast<int*>(&ins->object);
+			return reinterpret_cast<int>(ins->object);
 		else
 			return json::object({ {"id", (long long)*reinterpret_cast<void**>(&ins->object)} });
 	}
@@ -139,10 +139,12 @@ void configuration_serialize(configuration* config, const char* path)
 	std::ofstream o(path);
 	o << std::setw(4) << result;
 }
-instance createInstance(ce_module* module, const json& object)
+instance createInstance(const json& object)
 {
 	std::string typeName = object["type"];
-	auto type = module_get_type(module, typeName.c_str());
+
+	auto type = get_type(typeName.c_str());
+	assert(type->constructor);
 	return type_create(type);
 }
 instance parseValue(std::map<long long, instance>& loadedInstances, const json& object)
@@ -189,7 +191,6 @@ void assignProperties(std::map<long long, instance>& loadedInstances, const json
 
 configuration* configuration_deserialize(const char* path)
 {
-	std::map<std::string, ce_module*> loadedModules;
 	std::map<long long, instance> loadedInstances;
 
 	std::ifstream in(path);
@@ -199,10 +200,9 @@ configuration* configuration_deserialize(const char* path)
 	for (const auto& object : objects)
 	{
 		std::string moduleName = object["module"];
-		auto& module = loadedModules[moduleName];
-		if (!module)
-			module = get_module(moduleName.c_str());
-		loadedInstances[object["id"]] = createInstance(module, object);
+		initialize_module(moduleName.c_str());
+
+		loadedInstances[object["id"]] = createInstance( object);
 	}
 
 	// Populate properties
