@@ -27,9 +27,9 @@ type style_t
 property pathProperty
 {
     .name = "Path",
-    .value_kind = string,
-    .getter = {.STRING = (get_property_s)&symbol_style_get_path},
-    .setter = {.STRING = (set_property_s)&symbol_style_set_path},
+    .type = &string_t,
+    .get = (get_property)&symbol_style_get_path,
+    .set = (set_property)&symbol_style_set_path,
 };
 
 std::array symbolStyleProperties = { pathProperty };
@@ -49,9 +49,9 @@ type symbol_style_t
 property widthProperty
 {
     .name = "Width",
-    .value_kind = integer,
-    .getter = {.INTEGER = (get_property_i)&line_style_get_width},
-    .setter = {.INTEGER = (set_property_i)&line_style_set_width},
+    .type = &integer_t,
+    .get = (get_property)&line_style_get_width,
+    .set = (set_property)&line_style_set_width,
 };
 
 std::array lineStyleProperties = { widthProperty };
@@ -70,12 +70,11 @@ type line_style_t
 list_info style_list_info
 {
     .list_type = &style_t,
-    .value_kind = api_type,
-    .list_size = (list_size) &style_list_get_size,
-    .list_at = {.TYPE = (list_at_t) &style_list_at},
-    .list_remove = (list_remove) &style_list_remove,
-    .list_insert = {.TYPE = (list_insert_t) &style_list_insert},
-    .list_add = {.TYPE = (list_add_t) &style_list_add}
+    .size = (list_size) &style_list_get_size,
+    .at = (list_at) &style_list_at,
+    .remove = (list_remove) &style_list_remove,
+    .insert = (list_insert) &style_list_insert,
+    .add = (list_add) &style_list_add
 };
 
 // StyleList
@@ -92,15 +91,14 @@ property stylesProperty
 {
     .name = "Styles",
     .type = &style_list_t,
-    .value_kind = api_type,
-    .getter = {.TYPE = (get_property_t)&layer_get_styles}
+    .get = (get_property)&layer_get_styles
 };
 
 std::array layerProperties = { stylesProperty };
 type layer_t
 {
     .name = "Layer",
-    .constructor = (constructor)create_layer,
+    .constructor = (constructor)&create_layer,
     .properties = {layerProperties.data(), (int)layerProperties.size()},
     .inc_ref = (inc_ref)&incref_layer,
     .dec_ref = (dec_ref)&decref_layer,
@@ -110,13 +108,12 @@ type layer_t
 // LayerList
 list_info layer_list_info
 {
-     .list_type = &layer_t,
-    .value_kind = api_type,
-    .list_size = (list_size)&layer_list_get_size,
-    .list_at = {.TYPE = (list_at_t)&layer_list_at},
-    .list_remove = (list_remove)&layer_list_remove,
-    .list_insert = {.TYPE = (list_insert_t)&layer_list_insert},
-    .list_add = {.TYPE = (list_add_t)&layer_list_add}
+    .list_type = &layer_t,
+    .size = (list_size)&layer_list_get_size,
+    .at = (list_at)&layer_list_at,
+    .remove = (list_remove)&layer_list_remove,
+    .insert = (list_insert)&layer_list_insert,
+    .add = (list_add)&layer_list_add
 };
 
 type layer_list_t
@@ -131,8 +128,7 @@ property layersProperty
 {
     .name = "Layers",
     .type = &layer_list_t,
-    .value_kind = api_type,
-    .getter = {.TYPE = (get_property_t)&view_get_layers}
+    .get = (get_property)&view_get_layers
 };
 
 std::array viewProperties = { layersProperty };

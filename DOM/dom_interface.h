@@ -5,54 +5,27 @@ extern "C"
 	// Properties
 	typedef struct type type;
 	typedef struct instance instance;
+	typedef void* object_id;
 	typedef struct ce_module ce_module;
-	typedef void* (*set_property_t)(void*, void*);
-	typedef void* (*set_property_s)(void*, const char*);
-	typedef void* (*set_property_i)(void*, int);
-	typedef void* (*get_property_t)(void*);
-	typedef const char* (*get_property_s)(void*);
-	typedef int (*get_property_i)(void*);
-	typedef void (*inc_ref)(void*);
-	typedef void (*dec_ref)(void*);
-	typedef type* (*type_of)(void*);
-	typedef instance* (*constructor)();
-	typedef int (*list_size)(void*);
-	typedef void* (*list_at_t)(void*, int);
-	typedef const char* (*list_at_s)(void*, int);
-	typedef int (*list_at_i)(void*, int);
-	typedef void (*list_remove)(void*, int);
-	typedef void (*list_insert_t)(void*, int, void*);
-	typedef void (*list_insert_s)(void*, int, const char*);
-	typedef void (*list_insert_i)(void*, int, int);
-	typedef void (*list_add_t)(void*, void*);
-	typedef void (*list_add_s)(void*, const char*);
-	typedef void (*list_add_i)(void*, int);
+	typedef void (*set_property)(object_id, object_id);
+	typedef object_id (*get_property)(object_id);
+	typedef void (*inc_ref)(object_id);
+	typedef void (*dec_ref)(object_id);
+	typedef type* (*type_of)(object_id);
+	typedef object_id (*constructor)();
+	typedef int (*list_size)(object_id);
+	typedef object_id (*list_at)(object_id, int);
+	typedef void (*list_remove)(object_id, int);
+	typedef void (*list_insert)(object_id, int, object_id);
+	typedef void (*list_add)(object_id, object_id);
 	typedef ce_module* (*load_module_func)();
-	
-	typedef enum value_kind
-	{
-		api_type,
-		string,
-		integer
-	} value_kind;
 
 	typedef struct property
 	{
 		const char* name;
 		type* type;
-		value_kind value_kind;
-		union 
-		{
-			get_property_t TYPE;
-			get_property_s STRING;
-			get_property_i INTEGER;
-		} getter;
-		union
-		{
-			set_property_t TYPE;
-			set_property_s STRING;
-			set_property_i INTEGER;
-		} setter;
+		get_property get;
+		set_property set;
 	} property;
 
 	typedef struct property_list
@@ -108,28 +81,11 @@ extern "C"
 	typedef struct list_info
 	{
 		type* list_type;
-		value_kind value_kind;
-		list_size list_size;
-
-		union {
-			list_at_t TYPE;
-			list_at_s STRING;
-			list_at_i INTEGER;
-		} list_at;
-
-		list_remove list_remove;
-
-		union {
-			list_insert_t TYPE;
-			list_insert_s STRING;
-			list_insert_i INTEGER;
-		} list_insert;
-
-		union {
-			list_add_t TYPE;
-			list_add_s STRING;
-			list_add_i INTEGER;
-		} list_add;
+		list_size size;
+		list_at at;
+		list_remove remove;
+		list_insert insert;
+		list_add add;
 	} list_info;
 
 	// Type
@@ -163,15 +119,13 @@ extern "C"
 	// Instance
 	typedef struct instance
 	{
-		union {
-			void* pointer;
-			const char* string;
-			int integer;
-		} object;
-		value_kind value_kind;
+		object_id object;
 		type* type;
 	} instance;
 
+	extern type string_t;
+
+	extern type integer_t;
 
 	//module* load_module(const char*);
 }

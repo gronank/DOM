@@ -4,10 +4,13 @@
 #include <span>
 #include <algorithm>
 
-type* type_of_pointer(type* base_type, void* ptr)
+type* type_of_object(type* base_type, object_id* ptr)
 {
-	return base_type->type_of ? base_type->type_of(ptr) : base_type;
+	return base_type->type_of ? base_type->type_of(*ptr) : base_type;
 }
+
+
+
 std::map<ce_module*, HINSTANCE> loadedModules;
 
 ce_module* load_module(const char* path)
@@ -36,20 +39,27 @@ instance type_create(type* typ)
 {
 	if (!typ->constructor)
 		return {};
-	return { .object = {.pointer = typ->constructor()}, .value_kind = api_type, .type = typ };
+	return { .object = typ->constructor(), .type = typ };
 }
 
 void instance_inc_ref(instance* ins)
 {
-	if(ins->value_kind == api_type && ins->type->inc_ref)
-		ins->type->inc_ref(ins->object.pointer);
+	if(ins->type->inc_ref)
+		ins->type->inc_ref(ins->object);
 }
 
 void instance_dec_ref(instance* ins)
 {
-	if(ins->type && ins->type->dec_ref)
-		ins->type->dec_ref(ins->object.pointer);
+	if(ins->type->dec_ref)
+		ins->type->dec_ref(ins->object);
 }
+instance resolve_instance(object_id id, type* base_type)
+{
+	instance ins = { .object = id, .type = type_of_object(base_type, &id) };
+	instance_inc_ref(&ins);
+	return ins;
+}
+
 property* instance_get_property_by_name_and_type(instance* ins, type* typ, const char* name)
 {
 	auto properties = std::span{ ins->type->properties.begin, (size_t)ins->type->properties.size };
@@ -65,48 +75,17 @@ property* instance_get_property_by_name_and_type(instance* ins, type* typ, const
 
 property* instance_get_property_by_name(instance* ins, const char* name)
 {
-	if (ins->value_kind != api_type)
-		return nullptr;
-	
 	return instance_get_property_by_name_and_type(ins, ins->type, name);
 }
 
 instance instance_get_property_value(instance* ins, property* prop)
 {
-	instance result;
-	switch (prop->value_kind)
-	{
-	case api_type:
-		result = { {.pointer = prop->getter.TYPE(ins->object.pointer)}, api_type };
-		result.type = type_of_pointer(prop->type, result.object.pointer);
-		instance_inc_ref(&result);
-		break;
-	case string:
-		result = { {.string = prop->getter.STRING(ins->object.pointer)}, string };
-		break;
-	case integer:
-		result = { {.integer = prop->getter.INTEGER(ins->object.pointer)}, integer };
-	}
-	
-	return result;
-}
+	return resolve_instance(prop->get(ins->object), prop->type);
+};
 
 void instance_set_property_value(instance* ins, property* prop, instance* value)
 {
-	if (prop->value_kind != value->value_kind || ins->value_kind != api_type)
-		return;
-	switch (prop->value_kind)
-	{
-	case api_type:
-		prop->setter.TYPE(ins->object.pointer, value->object.pointer);
-		break;
-	case string:
-		prop->setter.STRING(ins->object.pointer, value->object.string);
-		break;
-	case integer:
-		prop->setter.INTEGER(ins->object.pointer, value->object.integer);
-		break;
-	}
+	prop->set(ins->object, value->object);
 }
 
 int instance_list_size(instance* ins)
@@ -114,83 +93,56 @@ int instance_list_size(instance* ins)
 	auto* li = ins->type->list_info;
 	if (!li)
 		return 0;
-	return li->list_size(ins->object.pointer);
+	return li->size(ins->object);
 }
 
 instance instance_list_at(instance* ins, int index)
 {
-	auto* li = ins->type->list_info;
-	if (!li)
+	auto* list = ins->type->list_info;
+	if (!list)
 		return {};
-	instance result;
-	switch (li->value_kind)
-	{
-	case api_type:
-		result = { {.pointer = li->list_at.TYPE(ins->object.pointer, index)}, api_type };
-		result.type = type_of_pointer(li->list_type, result.object.pointer);
-		instance_inc_ref(&result);
-		break;
-	case string:
-		result = { {.string = li->list_at.STRING(ins->object.pointer, index)}, string };
-		break;
-	case integer:
-		result = { {.integer = li->list_at.INTEGER(ins->object.pointer, index)}, integer };
-		break;
-	}
-	return result;
+	return resolve_instance(list->at(ins->object, index), list->list_type);
 }
 
 void instance_list_insert(instance* ins, int index, instance* value)
 {
-	auto* li = ins->type->list_info;
-	if (!li || li->value_kind != value->value_kind)
+	auto* list = ins->type->list_info;
+	if (!list)
 		return;
-	switch (li->value_kind)
-	{
-	case api_type:
-		li->list_insert.TYPE(ins->object.pointer, index, value->object.pointer);
-		break;
-	case string:
-		li->list_insert.STRING(ins->object.pointer, index, value->object.string);
-		break;
-	case integer:
-		li->list_insert.INTEGER(ins->object.pointer, index, value->object.integer);
-		break;
-	}
+	list->insert(ins->object, index, value->object);
 }
 
 void instance_list_remove(instance* ins, int index)
 {
-	if (!ins->type->list_info || ins->value_kind != api_type)
+	if (!ins->type->list_info)
 		return;
-	ins->type->list_info->list_remove(ins->object.pointer, index);
+	ins->type->list_info->remove(ins->object, index);
 }
 
 void instance_list_add(instance* ins, instance* value)
 {
-	auto* li = ins->type->list_info;
-	if (!li || li->value_kind != value->value_kind)
+	auto* list = ins->type->list_info;
+	if (!list)
 		return;
-	switch (li->value_kind)
-	{
-	case api_type:
-		li->list_add.TYPE(ins->object.pointer, value->object.pointer);
-		break;
-	case string:
-		li->list_add.STRING(ins->object.pointer, value->object.string);
-		break;
-	case integer:
-		li->list_add.INTEGER(ins->object.pointer, value->object.integer);
-		break;
-	}
+	list->add(ins->object, value->object);
 }
 
 DOM_EXPORT instance instance_string(const char* str)
 {
-	return { .object = {.string = str}, .value_kind = string };
+	return { .object = reinterpret_cast<object_id>((char*)str), .type = &string_t};
 }
 
 DOM_EXPORT instance instance_integer(int i)
 {
-	return { .object = {.integer = i}, .value_kind = integer };
+	return { .object = *reinterpret_cast<object_id*>(&i), .type = &integer_t };
 }
+
+type string_t
+{
+	.name = "String"
+};
+
+type integer_t
+{
+	.name = "Integer"
+};

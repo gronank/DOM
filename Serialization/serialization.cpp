@@ -58,16 +58,44 @@ void configuration_add_instance(configuration* conf, instance* ins)
 namespace {
 	using namespace nlohmann;
 
-	json toJson(std::map<void*, json>& uniqueInstances, instance* ins);
+	json toJson(instance* ins)
+	{
+		if (ins->type->list_info)
+		{
+			auto listResult = json::array();
+			int size = instance_list_size(ins);
+			for (int i = 0; i < size; i++)
+			{
+				auto item = instance_list_at(ins, i);
+				listResult.push_back(toJson(&item));
+				instance_dec_ref(&item);
+			}
+			return listResult;
+		}
+		if (ins->type == &string_t)
+			return reinterpret_cast<const char*>(&ins->object);
+		else if (ins->type == &integer_t)
+			return *reinterpret_cast<int*>(&ins->object);
+		else
+			return json::object({ {"id", (long long)*reinterpret_cast<void**>(&ins->object)} });
+	}
 
 	void collectInstances(std::map<void*, json>& uniqueInstances, instance* ins)
 	{
-		if (ins->value_kind != api_type || ins->type->list_info)
+		if (ins->type->list_info)
+		{
+			int size = instance_list_size(ins);
+			for (int i = 0; i < size; i++)
+			{
+				auto item = instance_list_at(ins, i);
+				collectInstances(uniqueInstances, &item);
+			}
 			return;
-		if (uniqueInstances.contains(ins->object.pointer))
+		}
+		if (uniqueInstances.contains(&ins->object) || ins->type->module == nullptr)
 			return;
 		auto result = json::object();
-		auto objectId = ins->object.pointer;
+		auto objectId = *reinterpret_cast<void**>(&ins->object);
 		result["type"] = ins->type->name;
 		result["id"] = (long long)objectId;
 		assert(!ins->type->list_info);
@@ -80,7 +108,7 @@ namespace {
 			{
 				auto propertyValue = instance_get_property_value(ins, &property);
 				collectInstances(uniqueInstances, &propertyValue);
-				propertyValues[property.name] = toJson(uniqueInstances, &propertyValue);
+				propertyValues[property.name] = toJson(&propertyValue);
 				instance_dec_ref(&propertyValue);
 			}
 		}
@@ -89,34 +117,7 @@ namespace {
 		uniqueInstances[objectId] = result;
 	}
 
-	json toJson(std::map<void*, json>& uniqueInstances, instance* ins)
-	{
-		if (ins->value_kind == api_type && ins->type->list_info)
-		{
-			auto listResult = json::array();
-			int size = instance_list_size(ins);
-			for (int i = 0; i < size; i++)
-			{
-				auto item = instance_list_at(ins, i);
-				collectInstances(uniqueInstances, &item);
-				listResult.push_back(toJson(uniqueInstances, &item));
-				instance_dec_ref(&item);
-			}
-			return listResult;
-		}
 
-		switch (ins->value_kind)
-		{
-		case api_type:
-			return ins->object.pointer ? json::object({ {"id", (long long)ins->object.pointer} }) : json::object();
-		case string:
-			return ins->object.string;
-		case integer:
-			return ins->object.integer;
-		}
-		assert(false);
-		return {};
-	}
 }
 
 void configuration_serialize(configuration* config, const char* path)
@@ -166,7 +167,7 @@ void assignProperties(std::map<long long, instance>& loadedInstances, const json
 	for (const auto& [propertyName, propertyValue]: object["properties"].items())
 	{
 		auto property = instance_get_property_by_name(&objectInstance, propertyName.c_str());
-		if (property->value_kind == api_type && property->type->list_info)
+		if ( property->type->list_info)
 		{
 			auto listInstance = instance_get_property_value(&objectInstance, property);
 			for (const auto& item : propertyValue)

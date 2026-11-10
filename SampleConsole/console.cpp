@@ -61,10 +61,10 @@ void export_objects(ce_module* m)
 auto indent = std::string_view("                                          ");
 void printInstance(instance* ins, int indentation)
 {
-	if (ins->value_kind == string)
-		std::cout << ins->object.string << "\n";
-	else if(ins->value_kind == integer)
-		std::cout << ins->object.integer << "\n";
+	if (ins->type == &string_t)
+		std::cout << *reinterpret_cast<const char*>(ins->object) << "\n";
+	else if(ins->type == &integer_t)
+		std::cout << *reinterpret_cast<int*>(&ins->object) << "\n";
 	else if (ins->type->list_info)
 	{
 		std::cout << "[\n";
@@ -131,11 +131,11 @@ void printTypes(ce_module* mod)
 		{
 
 			auto propertyTypeName =
-				property.value_kind == string ? "String" :
-				property.value_kind == integer ? "Integer" :
+				property.type == &string_t ? "String" :
+				property.type == &integer_t ? "Integer" :
 				property.type->name;
 			std::string access = "[get";
-			if (property.setter.TYPE)
+			if (property.set)
 				access += ", set";
 			access += "]";
 			std::cout << "    " << property.name << " {" << propertyTypeName << "} " << access << "\n";
